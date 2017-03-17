@@ -1,10 +1,10 @@
 This namelist contains various input parameters for HYDRO runs
 
 &RUN
-nstepmax=100
-tend=2.0
-noutput=1000
-on_output=.false.
+nstepmax=100000
+tend=20.0
+noutput=100
+on_output=.true.
 /
 
 &MESH
