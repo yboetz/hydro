@@ -1,6 +1,6 @@
 # C compiler
 #------------------
-CC = icc
+CC = cc
 
 # Fortran compiler
 #-----------------
@@ -16,7 +16,7 @@ MPIF90 = mpiifort
 
 # C compilation options
 #----------------------
-CFLAGS = -O3
+CFLAGS = -O3 -Wall
 
 # Fortran compilation options
 #----------------------------
