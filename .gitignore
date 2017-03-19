@@ -1,5 +1,5 @@
 F90/
 *.o
 hydro_mono
-C/MonoRef/bin/
+bin/
 *.vts
