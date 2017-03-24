@@ -21,7 +21,7 @@
 static void
 ComputeQEforRow(const long j, double *uold, double *q, double *e,
                 const double Hsmallr, const long Hnx, const long Hnxt,
-                const long Hnyt, const long nxyt)
+                const long Hnyt, const long nxyt)   // Compute internal energy over one row
 {
     long i;
     double eken;
