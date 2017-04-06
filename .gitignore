@@ -1,5 +1,7 @@
 F90/
 *.o
 hydro_mono
+hydro_omp
+penmp
 bin/
 *.vts

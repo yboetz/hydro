@@ -30,7 +30,7 @@ LDFLAGS = -O3
 
 # OpenMP C compilation options
 #-----------------------------
-CFLAGS_OMP =  -openmp
+CFLAGS_OMP =  -fopenmp
 
 # OpenMP Fortran compilation options
 #-----------------------------------
