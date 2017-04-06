@@ -40,7 +40,7 @@ main(int argc, char **argv)
   hydro_init(&H, &Hv);
   PRINTUOLD(H, &Hv);
   
-  printf("Hydro starts - sequential version \n");
+  printf("Hydro starts - openmp version \n");
 
   // vtkfile(nvtk, H, &Hv);
   if (H.dtoutput > 0) 
