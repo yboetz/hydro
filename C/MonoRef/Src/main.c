@@ -46,6 +46,7 @@ main(int argc, char **argv)
           " out of %d processors\n",
           hostname, rank, world_size);
   
+  MPI_Barrier(MPI_COMM_WORLD);
 
   int value;
   int tag = 100;
@@ -69,24 +70,24 @@ main(int argc, char **argv)
   // Send value around processes
   int n = 0;
   value = 0;
-  while(n < 100)
+  while(n < 32)
   {
-    if(rank == (n+1) % 4)
+    if(rank == (n+1) % world_size)
     {
-      MPI_Recv(&value, 1, MPI_INT, n % 4, tag, MPI_COMM_WORLD, &status);
-      printf("Rank %d got value %d from rank %d.\n", rank, value, n % 4);
+      MPI_Recv(&value, 1, MPI_INT, n % world_size, tag, MPI_COMM_WORLD, &status);
+      printf("Rank %d got value %d from rank %d.\n", rank, value, n % world_size);
       value += 1;
-      usleep(100000);
+      usleep(50000);
     }
-    else if(rank == n % 4)
+    else if(rank == n % world_size)
     {
-      MPI_Send(&value, 1, MPI_INT, (n+1)%4, tag, MPI_COMM_WORLD);
-      printf("Rank %d sent value %d to rank %d.\n", rank, value, (n+1)%4);
+      MPI_Send(&value, 1, MPI_INT, (n+1) % world_size, tag, MPI_COMM_WORLD);
+      printf("Rank %d sent value %d to rank %d.\n", rank, value, (n+1) % world_size);
     }
     n++;
   }
   
-  if(rank == 5) // Only run hydro code on one process for now
+  if(rank == -1) // Only run hydro code on one process for now
   {
 
   int nb_th=1;
