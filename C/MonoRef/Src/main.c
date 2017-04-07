@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <mpi.h>
+#include <unistd.h>
 
 #include "parametres.h"
 #include "hydro_funcs.h"
@@ -45,9 +46,47 @@ main(int argc, char **argv)
           " out of %d processors\n",
           hostname, rank, world_size);
   
+
+  int value;
+  int tag = 100;
+  MPI_Status status;
+
+  /*
+  // Simple communication
+  if(rank == 0)
+  {
+    value = 1000;
+    MPI_Send(&value, 1, MPI_INT, 3, tag, MPI_COMM_WORLD);
+  }
+  else if(rank == 3)
+  {
+    MPI_Recv(&value, 1, MPI_INT, 0, tag, MPI_COMM_WORLD, &status);
+    printf("Rank %d received value %d from rank %d\n", 3,value,0);
+  }
+  */
+
   
+  // Send value around processes
+  int n = 0;
+  value = 0;
+  while(n < 100)
+  {
+    if(rank == (n+1) % 4)
+    {
+      MPI_Recv(&value, 1, MPI_INT, n % 4, tag, MPI_COMM_WORLD, &status);
+      printf("Rank %d got value %d from rank %d.\n", rank, value, n % 4);
+      value += 1;
+      usleep(100000);
+    }
+    else if(rank == n % 4)
+    {
+      MPI_Send(&value, 1, MPI_INT, (n+1)%4, tag, MPI_COMM_WORLD);
+      printf("Rank %d sent value %d to rank %d.\n", rank, value, (n+1)%4);
+    }
+    n++;
+  }
   
-  if(rank == 0) // Only run hydro code on one process for now
+  if(rank == 5) // Only run hydro code on one process for now
   {
 
   int nb_th=1;
