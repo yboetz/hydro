@@ -6,6 +6,7 @@
 */
 #include <stdio.h>
 #include <time.h>
+#include <mpi.h>
 
 #include "parametres.h"
 #include "hydro_funcs.h"
@@ -23,6 +24,32 @@ unsigned long flops = 0;
 int
 main(int argc, char **argv)
 {
+
+  MPI_Init(NULL,NULL);
+
+  // Get number of processes
+  int world_size;
+  MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+  // Get rank of processes
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  // Get name of the processor
+  char hostname[MPI_MAX_PROCESSOR_NAME];
+  int name_len;
+  MPI_Get_processor_name(hostname, &name_len);
+
+  // Print off a hello world message
+  printf("Hello world from host %s, rank %d"
+          " out of %d processors\n",
+          hostname, rank, world_size);
+  
+  
+  
+  if(rank == 0) // Only run hydro code on one process for now
+  {
+
   int nb_th=1;
   double dt = 0;
   long nvtk = 0;
@@ -40,7 +67,7 @@ main(int argc, char **argv)
   hydro_init(&H, &Hv);
   PRINTUOLD(H, &Hv);
   
-  printf("Hydro starts - sequential version \n");
+  printf("Hydro starts - mpi version \n");
 
   // vtkfile(nvtk, H, &Hv);
   if (H.dtoutput > 0) 
@@ -105,7 +132,11 @@ main(int argc, char **argv)
   timeToString(outnum, elaps); 
   
   fprintf(stdout, "Hydro ends in %ss (%.3lf).\n", outnum, elaps);
-  
+
+  } // End of hydro code
+
+  MPI_Finalize();
+
 return 0;
 }
     

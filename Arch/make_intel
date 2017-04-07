@@ -8,7 +8,7 @@ F90 = ifort
 
 # MPI C compiler
 #---------------
-MPICC = mpiicc
+MPICC = mpicc
 
 # MPI Fortran compiler
 #---------------------
