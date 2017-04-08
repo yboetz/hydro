@@ -75,14 +75,14 @@ main(int argc, char **argv)
     if(rank == (n+1) % world_size)
     {
       MPI_Recv(&value, 1, MPI_INT, n % world_size, tag, MPI_COMM_WORLD, &status);
-      printf("Rank %d got value %d from rank %d.\n", rank, value, n % world_size);
+      printf("Rank %d got value %d from rank %d.\n\n", rank, value, n % world_size);
       value += 1;
       usleep(50000);
     }
     else if(rank == n % world_size)
     {
-      MPI_Send(&value, 1, MPI_INT, (n+1) % world_size, tag, MPI_COMM_WORLD);
       printf("Rank %d sent value %d to rank %d.\n", rank, value, (n+1) % world_size);
+      MPI_Send(&value, 1, MPI_INT, (n+1) % world_size, tag, MPI_COMM_WORLD);
     }
     n++;
   }
