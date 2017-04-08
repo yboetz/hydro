@@ -20,6 +20,7 @@ hydrovarwork_t Hvw;             // nvar
 hydrowork_t Hw;
 unsigned long flops = 0;
 
+
 int
 main(int argc, char **argv)
 {
@@ -50,8 +51,13 @@ main(int argc, char **argv)
       next_output_time = next_output_time + H.dtoutput;
     }
 
+// Start parallel region
+#pragma omp parallel private(Hw, Hvw) // Each thread needs his own workspace
+{
   while ((H.t < H.tend) && (H.nstep < H.nstepmax)) 
     {	
+#pragma omp single
+{
       start_iter = cclock();
       outnum[0] = 0;
       flops = 0;
@@ -62,7 +68,9 @@ main(int argc, char **argv)
 	    dt = dt / 2.0;
 	  }
 	}
-      
+} // End omp single
+
+// Compute in parallel
       if ((H.nstep % 2) == 0) {
 	hydro_godunov(1, dt, H, &Hv, &Hw, &Hvw);
 	hydro_godunov(2, dt, H, &Hv, &Hw, &Hvw); 
@@ -70,7 +78,9 @@ main(int argc, char **argv)
 	hydro_godunov(2, dt, H, &Hv, &Hw, &Hvw);
 	hydro_godunov(1, dt, H, &Hv, &Hw, &Hvw); 
       }
-      
+
+#pragma omp single
+{
       end_iter = cclock();
       H.nstep++;
       H.t += dt;
@@ -98,7 +108,11 @@ main(int argc, char **argv)
 	}
       }
 	fprintf(stdout, "--> step=%-4ld %12.5e, %10.5e %s\n", H.nstep, H.t, dt, outnum);
+} // End omp single
+
     }   // end while loop
+} // End omp parallel
+
   hydro_finish(H, &Hv);
   end_time = cclock();
   elaps = (double) (end_time - start_time);

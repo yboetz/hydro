@@ -121,7 +121,7 @@ hydro_godunov(long idim, double dt, const hydroparam_t H, hydrovar_t * Hv,
     ind2 = Hw->ind2;
 
     if (idim == 1) {
-#pragma omp parallel for schedule(static)
+#pragma omp for schedule(static)
       for (j = H.jmin + ExtraLayer; j < H.jmax - ExtraLayer; j++) {
 	qID = &q[IHvw(0, ID)];
 	qIP = &q[IHvw(0, IP)];
@@ -164,7 +164,7 @@ hydro_godunov(long idim, double dt, const hydroparam_t H, hydrovar_t * Hv,
 	PRINTUOLD(H, Hv);
       }
     } else {
-#pragma omp parallel for schedule(static)
+#pragma omp for schedule(static)
       for (i = H.imin + ExtraLayer; i < H.imax - ExtraLayer; i++) {
 	qID = &Hvw->q[IHvw(0, ID)];
 	qIP = &Hvw->q[IHvw(0, IP)];
