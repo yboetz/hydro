@@ -29,10 +29,13 @@ hydro_init(hydroparam_t * H, hydrovar_t * Hv)
     // *WARNING* : we will use 0 based arrays everywhere since it is C code!
     H->imin = H->jmin = 0;
 
-    // Each process should only have part of the grid. We split in x direction.
-    int nx = H->nx;
-    H->nx = nx / world_size;
-    if(rank < nx % world_size) H->nx += 1;
+    // Save the global grid size so each process knows how big the total grid is
+    H->nxg = H->nx;
+    H->nyg = H->ny;
+
+    // Reduce grid size so each process only has part of the grid. We split in x direction.
+    H->nx = H->nxg / world_size;
+    if(rank < H->nxg % world_size) H->nx += 1;
 
     // We add two extra layers left/right/top/bottom
     H->imax = H->nx + ExtraLayerTot;
@@ -40,7 +43,7 @@ hydro_init(hydroparam_t * H, hydrovar_t * Hv)
     H->nxt = H->imax - H->imin; // column size in the array
     H->nyt = H->jmax - H->jmin; // row size in the array
 
-    printf("Rank %d - grid size: %dx%d\n", rank, H->nxt, H->nyt); // Print out gridsize. Remove at some point
+    printf("Rank %d - grid size: %ldx%ld\n", rank, H->nxt, H->nyt); // Print out gridsize. Remove at some point
     MPI_Barrier(MPI_COMM_WORLD);
 
     // maximum direction size

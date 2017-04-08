@@ -11,7 +11,7 @@ typedef struct _hydroparam {
     double dtoutput;
 
     // dimensions
-    long imin, imax, jmin, jmax, nx, ny;
+    long imin, imax, jmin, jmax, nx, ny, nxg, nyg;
     long nxt, nyt, nxyt;
     long arSz, arVarSz;          // taille des buffers alloues
 
@@ -49,7 +49,7 @@ typedef struct _hydroparam {
 
 // Hydrovar holds the whole 2D problem for all variables
 typedef struct _hydrovar {
-    double *uold;               // nxt, nyt, nvar allocated as (nxt * nyt), nvar
+    double *uold;               // nxt, nyt, nvar allocated as nxt * nyt * nvar
 } hydrovar_t;                   // 1:nvar
 #ifndef IHv
 // #define IHv(i,j,v) ((i) + (j) * H.nxt + (H.nxt * H.nyt) * (v))
