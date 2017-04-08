@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <mpi.h>
 
 #include "parametres.h"
 static void
@@ -181,16 +182,22 @@ process_input(char *datafile, hydroparam_t * H)
         }
     }
     fclose(fd);
-    // petit resume de la situation
 
-    printf("+-------------------+\n");
-    printf("|nx=%-7ld         |\n", H->nx);
-    printf("|ny=%-7ld         |\n", H->ny);
-    printf("|tend=%-10.3f    |\n", H->tend);
-    printf("|nstepmax=%-7ld   |\n", H->nstepmax);
-    printf("|noutput=%-7ld    |\n", H->noutput);
-    printf("|dtoutput=%-10.3f|\n", H->dtoutput);
-    printf("+-------------------+\n");
+    // Only print out resume once
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if(rank == 0)
+    {
+        // petit resume de la situation
+        printf("+-------------------+\n");
+        printf("|nx=%-7ld         |\n", H->nx);
+        printf("|ny=%-7ld         |\n", H->ny);
+        printf("|tend=%-10.3f    |\n", H->tend);
+        printf("|nstepmax=%-7ld   |\n", H->nstepmax);
+        printf("|noutput=%-7ld    |\n", H->noutput);
+        printf("|dtoutput=%-10.3f|\n", H->dtoutput);
+        printf("+-------------------+\n");
+    }
 
     //exit(0);
 }

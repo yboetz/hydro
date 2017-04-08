@@ -25,7 +25,7 @@ unsigned long flops = 0;
 int
 main(int argc, char **argv)
 {
-
+  // Initialize MPI
   MPI_Init(NULL,NULL);
 
   // Get number of processes
@@ -36,23 +36,19 @@ main(int argc, char **argv)
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  // Get name of the processor
-  char hostname[MPI_MAX_PROCESSOR_NAME];
-  int name_len;
-  MPI_Get_processor_name(hostname, &name_len);
-
   // Print off a hello world message
-  printf("Hello world from host %s, rank %d"
+  printf("Hello world from rank %d"
           " out of %d processors\n",
-          hostname, rank, world_size);
-  
+          rank, world_size);
+
+  /*
   MPI_Barrier(MPI_COMM_WORLD);
 
   int value;
   int tag = 100;
   MPI_Status status;
 
-  /*
+  // MPI test
   // Simple communication
   if(rank == 0)
   {
@@ -64,13 +60,11 @@ main(int argc, char **argv)
     MPI_Recv(&value, 1, MPI_INT, 0, tag, MPI_COMM_WORLD, &status);
     printf("Rank %d received value %d from rank %d\n", 3,value,0);
   }
-  */
-
   
   // Send value around processes
   int n = 0;
   value = 0;
-  while(n < 32)
+  while(n < 8)
   {
     if(rank == (n+1) % world_size)
     {
@@ -86,9 +80,7 @@ main(int argc, char **argv)
     }
     n++;
   }
-  
-  if(rank == -1) // Only run hydro code on one process for now
-  {
+  */
 
   int nb_th=1;
   double dt = 0;
@@ -107,8 +99,8 @@ main(int argc, char **argv)
   hydro_init(&H, &Hv);
   PRINTUOLD(H, &Hv);
   
-  printf("Hydro starts - mpi version \n");
-
+  if(rank == 0) printf("Hydro starts - MPI version \n");
+  
   // vtkfile(nvtk, H, &Hv);
   if (H.dtoutput > 0) 
     {	
@@ -117,63 +109,78 @@ main(int argc, char **argv)
       next_output_time = next_output_time + H.dtoutput;
     }
 
+  MPI_Barrier(MPI_COMM_WORLD);
+  
   while ((H.t < H.tend) && (H.nstep < H.nstepmax)) 
     {	
       start_iter = cclock();
       outnum[0] = 0;
       flops = 0;
+
       if ((H.nstep % 2) == 0) 
-	{
-	  compute_deltat(&dt, H, &Hw, &Hv, &Hvw);
-	  if (H.nstep == 0) {
-	    dt = dt / 2.0;
-	  }
-	}
+      {
+        compute_deltat(&dt, H, &Hw, &Hv, &Hvw);
+        if (H.nstep == 0) dt = dt / 2.0;
+        // Get global minima of all dt and broadcast it
+        MPI_Allreduce(&dt, &dt, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+      }
       
-      if ((H.nstep % 2) == 0) {
-	hydro_godunov(1, dt, H, &Hv, &Hw, &Hvw);
-	hydro_godunov(2, dt, H, &Hv, &Hw, &Hvw); 
-      } else {
-	hydro_godunov(2, dt, H, &Hv, &Hw, &Hvw);
-	hydro_godunov(1, dt, H, &Hv, &Hw, &Hvw); 
+      if ((H.nstep % 2) == 0) 
+      {
+        hydro_godunov(1, dt, H, &Hv, &Hw, &Hvw);
+        hydro_godunov(2, dt, H, &Hv, &Hw, &Hvw); 
+      } 
+      else 
+      {
+        hydro_godunov(2, dt, H, &Hv, &Hw, &Hvw);
+        hydro_godunov(1, dt, H, &Hv, &Hw, &Hvw); 
       }
       
       end_iter = cclock();
       H.nstep++;
       H.t += dt;
-      
-      if (flops > 0) {
-	double iter_time = (double) (end_iter - start_iter);
-	if (iter_time > 1.e-9) {
-	  double mflops = (double) flops / (double) 1.e+6 / iter_time;
-	  sprintf(outnum, "%s {%.3f Mflops} (%.3fs)", outnum, mflops, iter_time);
-	}
-      } else {
-	double iter_time = (double) (end_iter - start_iter);
-	sprintf(outnum, "%s (%.3fs)", outnum, iter_time);
+
+      if(flops > 0)
+      {
+        double iter_time = (double) (end_iter - start_iter);
+        if(iter_time > 1.e-9)
+        {
+          double mflops = (double) flops / (double) 1.e+6 / iter_time;
+          sprintf(outnum, "%s {%.3f Mflops} (%.3fs)", outnum, mflops, iter_time);
+        }
+      } 
+      else
+      {
+        double iter_time = (double) (end_iter - start_iter);
+        sprintf(outnum, "%s (%.3fs)", outnum, iter_time);
       }
-      if (time_output == 0) {
-	if ((H.nstep % H.noutput) == 0) {
-	  vtkfile(++nvtk, H, &Hv);
-	  sprintf(outnum, "%s [%04ld]", outnum, nvtk);
-	}
-      } else {
-	if (H.t >= next_output_time) {
-	  vtkfile(++nvtk, H, &Hv);
-	  next_output_time = next_output_time + H.dtoutput;
-	  sprintf(outnum, "%s [%04ld]", outnum, nvtk);
-	}
+      if(time_output == 0)
+      {
+        if ((H.nstep % H.noutput) == 0)
+        {
+          vtkfile(++nvtk, H, &Hv);
+          sprintf(outnum, "%s [%04ld]", outnum, nvtk);
+        }
       }
-	fprintf(stdout, "--> step=%-4ld %12.5e, %10.5e %s\n", H.nstep, H.t, dt, outnum);
-    }   // end while loop
+      else
+      {
+        if(H.t >= next_output_time)
+        {
+          vtkfile(++nvtk, H, &Hv);
+          next_output_time = next_output_time + H.dtoutput;
+          sprintf(outnum, "%s [%04ld]", outnum, nvtk);
+        }
+      }
+      if(rank == 0) fprintf(stdout, "--> step=%-4ld %12.5e, %10.5e %s\n", H.nstep, H.t, dt, outnum);
+
+    } // End while loop
+
   hydro_finish(H, &Hv);
   end_time = cclock();
   elaps = (double) (end_time - start_time);
   timeToString(outnum, elaps); 
   
-  fprintf(stdout, "Hydro ends in %ss (%.3lf).\n", outnum, elaps);
-
-  } // End of hydro code
+  if(rank == 0) fprintf(stdout, "Hydro ends in %ss (%.3lf).\n", outnum, elaps);
 
   MPI_Finalize();
 
