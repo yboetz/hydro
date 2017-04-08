@@ -36,13 +36,14 @@ main(int argc, char **argv)
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+  /*
   // Print off a hello world message
   printf("Hello world from rank %d"
           " out of %d processors\n",
           rank, world_size);
-
-  /*
+  
   MPI_Barrier(MPI_COMM_WORLD);
+  
 
   int value;
   int tag = 100;
@@ -143,6 +144,8 @@ main(int argc, char **argv)
       if(flops > 0)
       {
         double iter_time = (double) (end_iter - start_iter);
+        // Get global max of iter_time and broadcast it
+        MPI_Allreduce(&iter_time, &iter_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
         if(iter_time > 1.e-9)
         {
           double mflops = (double) flops / (double) 1.e+6 / iter_time;
@@ -152,6 +155,8 @@ main(int argc, char **argv)
       else
       {
         double iter_time = (double) (end_iter - start_iter);
+        // Get global max of iter_time and broadcast it
+        MPI_Allreduce(&iter_time, &iter_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
         sprintf(outnum, "%s (%.3fs)", outnum, iter_time);
       }
       if(time_output == 0)

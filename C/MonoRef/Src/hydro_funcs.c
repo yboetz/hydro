@@ -9,23 +9,40 @@
 #include <unistd.h>
 #include <math.h>
 #include <stdio.h>
+#include <mpi.h>
 
 #include "utils.h"
 #include "hydro_funcs.h"
 void
 hydro_init(hydroparam_t * H, hydrovar_t * Hv)
 {
+    // Get number of processes
+    int world_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    // Get rank of processes
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    
     long i, j;
     long x, y;
 
     // *WARNING* : we will use 0 based arrays everywhere since it is C code!
     H->imin = H->jmin = 0;
 
+    // Each process should only have part of the grid. We split in x direction.
+    int nx = H->nx;
+    H->nx = nx / world_size;
+    if(rank < nx % world_size) H->nx += 1;
+
     // We add two extra layers left/right/top/bottom
     H->imax = H->nx + ExtraLayerTot;
     H->jmax = H->ny + ExtraLayerTot;
     H->nxt = H->imax - H->imin; // column size in the array
     H->nyt = H->jmax - H->jmin; // row size in the array
+
+    printf("Rank %d - grid size: %dx%d\n", rank, H->nxt, H->nyt); // Print out gridsize. Remove at some point
+    MPI_Barrier(MPI_COMM_WORLD);
+
     // maximum direction size
     H->nxyt = (H->nxt > H->nyt) ? H->nxt : H->nyt;
 

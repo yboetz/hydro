@@ -198,6 +198,7 @@ process_input(char *datafile, hydroparam_t * H)
         printf("|dtoutput=%-10.3f|\n", H->dtoutput);
         printf("+-------------------+\n");
     }
+    MPI_Barrier(MPI_COMM_WORLD);
 
     //exit(0);
 }
