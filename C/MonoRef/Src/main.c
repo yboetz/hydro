@@ -133,26 +133,28 @@ main(int argc, char **argv)
       for(int nv = 0; nv < IP; nv++)
       {
         #define IHv(i, j, v) ((i) + (H.nxt * (H.nyt * (v)+ (j))))
-        #define IHbuff(i, j, v) ((i) + (2 * (H.ny * (v)+ (j))))
-
+        
         for(int j = H.jmin + ExtraLayer; j < H.jmax - ExtraLayer; j++)
           {
             for(int i = H.imin + ExtraLayer; i < H.imin + 2*ExtraLayer; i++)
             {
+              #define IHbuff(i, j, v) ((i-ExtraLayer) + (2 * (H.ny * (v)+ (j-ExtraLayer))))
               if(rank % 2 == 0) 
                 buffer_a[IHbuff(i,j,nv)] = Hv.uold[IHv(i,j,nv)];
               else
                 buffer_b[IHbuff(i,j,nv)] = Hv.uold[IHv(i,j,nv)];
+              #undef IHbuff
             }
             for(int i = H.imax - 2*ExtraLayer; i < H.imax - ExtraLayer; i++)
             {
+              #define IHbuff(i, j, v) ((i-H.imax+2*ExtraLayer) + (2 * (H.ny * (v)+ (j-ExtraLayer))))
               if(rank % 2 == 1) 
                 buffer_a[IHbuff(i,j,nv)] = Hv.uold[IHv(i,j,nv)];
               else
                 buffer_b[IHbuff(i,j,nv)] = Hv.uold[IHv(i,j,nv)];
+              #undef IHbuff
             }
           } // End for j
-          #undef IHbuff
           #undef IHv
       } // End for nv
 
@@ -184,7 +186,6 @@ main(int argc, char **argv)
       for(int nv = 0; nv < IP; nv++)
       {
         #define IHv(i, j, v) ((i) + (H.nxt * (H.nyt * (v)+ (j))))
-        #define IHbuff(i, j, v) ((i) + (2 * (H.ny * (v)+ (j))))
 
         for(int j = H.jmin + ExtraLayer; j < H.jmax - ExtraLayer; j++)
           {
@@ -192,15 +193,12 @@ main(int argc, char **argv)
             {
               for(int i = H.imin; i < H.imin + ExtraLayer; i++)
               {
-                double tmp = Hv.uold[IHbuff(i,j,nv)];
-
+                #define IHbuff(i, j, v) ((i) + (2 * (H.ny * (v)+ (j-ExtraLayer))))
                 if(rank % 2 == 0) 
                   Hv.uold[IHv(i,j,nv)] = buffer_a[IHbuff(i,j,nv)];
                 else
                   Hv.uold[IHv(i,j,nv)] = buffer_b[IHbuff(i,j,nv)];
-
-                  //if(tmp != Hv.uold[IHbuff(i,j,nv)]){ printf("%f - %f ",tmp, Hv.uold[IHbuff(i,j,nv)]);
-                  //                                    printf("\n\n");}
+                #undef IHbuff
               }
             }
 
@@ -208,15 +206,16 @@ main(int argc, char **argv)
             {
               for(int i = H.imax - ExtraLayer; i < H.imax; i++)
               {
+                #define IHbuff(i, j, v) ((i-H.imax+ExtraLayer) + (2 * (H.ny * (v)+ (j-ExtraLayer))))
                 if(rank % 2 == 1) 
                   Hv.uold[IHv(i,j,nv)] = buffer_a[IHbuff(i,j,nv)];
                 else
                   Hv.uold[IHv(i,j,nv)] = buffer_b[IHbuff(i,j,nv)];
+                #undef IHbuff
               }
             }
 
           } // End for j
-          #undef IHbuff
           #undef IHv
       } // End for nv
 
@@ -224,7 +223,7 @@ main(int argc, char **argv)
       free(buffer_a); // Free up workspace
       free(buffer_b);
       MPI_Barrier(MPI_COMM_WORLD);
-      break; // Remove at some point
+      //break; // Remove at some point
 
 
       if ((H.nstep % 2) == 0) 
