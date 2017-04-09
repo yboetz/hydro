@@ -130,7 +130,7 @@ main(int argc, char **argv)
       /* Initialize buffers with correct values. For even ranks 
       buffer_a is left boundary and buffer_b right, for odd ranks
       vice versa */
-      for(int nv = 0; nv < IP; nv++)
+      for(int nv = 0; nv < H.nvar; nv++)
       {
         #define IHv(i, j, v) ((i) + (H.nxt * (H.nyt * (v)+ (j))))
         
@@ -185,7 +185,7 @@ main(int argc, char **argv)
 
 
       /* Write received data back to grid.*/
-      for(int nv = 0; nv < IP; nv++)
+      for(int nv = 0; nv < H.nvar; nv++)
       {
         #define IHv(i, j, v) ((i) + (H.nxt * (H.nyt * (v)+ (j))))
 
@@ -220,6 +220,7 @@ main(int argc, char **argv)
             }
 
           } // End for j
+
           #undef IHv
       } // End for nv
       
