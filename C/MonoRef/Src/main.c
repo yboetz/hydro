@@ -37,52 +37,6 @@ main(int argc, char **argv)
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  /*
-  // Print off a hello world message
-  printf("Hello world from rank %d"
-          " out of %d processors\n",
-          rank, world_size);
-  
-  MPI_Barrier(MPI_COMM_WORLD);
-  
-
-  int value;
-  int tag = 100;
-  MPI_Status status;
-
-  // MPI test
-  // Simple communication
-  if(rank == 0)
-  {
-    value = 1000;
-    MPI_Send(&value, 1, MPI_INT, 3, tag, MPI_COMM_WORLD);
-  }
-  else if(rank == 3)
-  {
-    MPI_Recv(&value, 1, MPI_INT, 0, tag, MPI_COMM_WORLD, &status);
-    printf("Rank %d received value %d from rank %d\n", 3,value,0);
-  }
-  
-  // Send value around processes
-  int n = 0;
-  value = 0;
-  while(n < 8)
-  {
-    if(rank == (n+1) % world_size)
-    {
-      MPI_Recv(&value, 1, MPI_INT, n % world_size, tag, MPI_COMM_WORLD, &status);
-      printf("Rank %d got value %d from rank %d.\n\n", rank, value, n % world_size);
-      value += 1;
-      usleep(50000);
-    }
-    else if(rank == n % world_size)
-    {
-      printf("Rank %d sent value %d to rank %d.\n", rank, value, (n+1) % world_size);
-      MPI_Send(&value, 1, MPI_INT, (n+1) % world_size, tag, MPI_COMM_WORLD);
-    }
-    n++;
-  }
-  */
 
   int nb_th=1;
   double dt = 0;
@@ -228,7 +182,6 @@ main(int argc, char **argv)
       free(buffer_a); // Free up workspace
       free(buffer_b);
       MPI_Barrier(MPI_COMM_WORLD);
-      //break; // Remove at some point
 
 
       if ((H.nstep % 2) == 0) 
