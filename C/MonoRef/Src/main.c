@@ -118,6 +118,38 @@ main(int argc, char **argv)
       outnum[0] = 0;
       flops = 0;
 
+      // Exchange boundary data here
+      int tmp = 1000 + 1000*H.nstep + rank;
+      int dest;
+      int tag = 111;
+
+      // Sent between 0 & 1, 2 & 3, ...
+      if(rank < world_size - world_size % 2)
+      {
+        if(rank % 2 == 0) dest = rank + 1;
+        if(rank % 2 == 1) dest = rank - 1;
+
+        MPI_Sendrecv_replace(&tmp, 1, MPI_INT, dest, tag, dest, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        printf("rank %d got value %d from rank %d\n",rank,tmp,dest);
+      }
+      usleep(200000);
+      MPI_Barrier(MPI_COMM_WORLD);
+
+      // Sent between 1 & 2, 3 & 4, ... 
+      if(0 < rank && rank < world_size - 1 + world_size % 2)
+      {
+        if(rank % 2 == 0) dest = rank - 1;
+        if(rank % 2 == 1) dest = rank + 1;
+
+        MPI_Sendrecv_replace(&tmp, 1, MPI_INT, dest, tag, dest, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        printf("rank %d got value %d from rank %d\n",rank,tmp,dest);
+      }
+      usleep(200000);
+      MPI_Barrier(MPI_COMM_WORLD);    
+
+      break; // Remove at some point
+      
+
       if ((H.nstep % 2) == 0) 
       {
         compute_deltat(&dt, H, &Hw, &Hv, &Hvw);

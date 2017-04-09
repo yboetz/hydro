@@ -6,3 +6,4 @@ hydro_mpi
 penmp
 bin/
 *.vts
+.vscode/
