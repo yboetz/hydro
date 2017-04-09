@@ -16,7 +16,7 @@ mono: $(OBJ)
 	$(CCOMP) $(LINKFLAGS) $(OBJ) -o hydro_mono -lm
 
 mpi: CCOMP = $(MPICC)
-mpi: CCOMPFLAGS = $(FFLAGS) $(FFLAGS_MPI)
+mpi: CCOMPFLAGS = $(CFLAGS) $(CFLAGS_MPI)
 mpi: LINKFLAGS = $(LDFLAGS) $(LDFLAGS_MPI)
 mpi: $(OBJ)
 	$(CCOMP) $(LINKFLAGS) $(OBJ) -o hydro_mpi -lm
@@ -28,7 +28,7 @@ omp: $(OBJ)
 	$(CCOMP) $(LINKFLAGS) $(OBJ) -o hydro_omp -lm
 
 mpiomp: CCOMP = $(MPICC)
-mpiomp: CCOMPFLAGS = $(FFLAGS) $(FFLAGS_MPI) $(FFLAGS_OMP)
+mpiomp: CCOMPFLAGS = $(CFLAGS) $(CFLAGS_MPI) $(CFLAGS_OMP)
 mpiomp: LINKFLAGS = $(LDFLAGS) $(LDFLAGS_MPI) $(LDFLAGS_OMP)
 mpiomp: $(OBJ)
 	$(CCOMP) $(LINKFLAGS) $(OBJ) -o hydro_mpiomp -lm

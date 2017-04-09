@@ -83,14 +83,6 @@ vtkfile(long step, const hydroparam_t H, hydrovar_t * Hv)
             if(k < H.nxg % world_size) nxl += 1; // Depending on rank nx is 1 entry longer
             size = nxl * nyl * H.nvar;
 
-            /*
-            MPI_Status status;
-            MPI_Probe(k, k, MPI_COMM_WORLD, &status);
-            MPI_Get_count(&status, MPI_DOUBLE, &size);                
-            nyl = H.nyt;
-            nxl = (size / 4) / nyl;
-            */
-
             // Get data from process k and write it to temporary buffer at position k*usize           
             MPI_Recv(buffer+k*usize, size, MPI_DOUBLE, k, k, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         }
