@@ -137,14 +137,14 @@ main(int argc, char **argv)
 
         for(int j = H.jmin + ExtraLayer; j < H.jmax - ExtraLayer; j++)
           {
-            for(int i = H.imin + ExtraLayer; i < H.imin + ExtraLayer + 2; i++)
+            for(int i = H.imin + ExtraLayer; i < H.imin + 2*ExtraLayer; i++)
             {
               if(rank % 2 == 0) 
                 buffer_a[IHbuff(i,j,nv)] = Hv.uold[IHv(i,j,nv)];
               else
                 buffer_b[IHbuff(i,j,nv)] = Hv.uold[IHv(i,j,nv)];
             }
-            for(int i = H.imax - ExtraLayer - 2; i < H.imax - ExtraLayer; i++)
+            for(int i = H.imax - 2*ExtraLayer; i < H.imax - ExtraLayer; i++)
             {
               if(rank % 2 == 1) 
                 buffer_a[IHbuff(i,j,nv)] = Hv.uold[IHv(i,j,nv)];
@@ -156,16 +156,16 @@ main(int argc, char **argv)
           #undef IHv
       } // End for nv
 
+
       // Send buffer_b between 0 & 1, 2 & 3, ...
       if(rank < world_size - world_size % 2)
       {
         if(rank % 2 == 0) dest = rank + 1;
         if(rank % 2 == 1) dest = rank - 1;
-
+        
         MPI_Sendrecv_replace(buffer_b, buffer_size, MPI_DOUBLE, dest, tag, dest, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        printf("rank %d got buffer_b of size %d from rank %d\n",rank,buffer_size,dest);
+        //printf("rank %d got buffer_b of size %d from rank %d\n",rank,buffer_size,dest);
       }
-      usleep(200000);
       MPI_Barrier(MPI_COMM_WORLD);
 
       // Send buffer_a between 1 & 2, 3 & 4, ... 
@@ -175,15 +175,55 @@ main(int argc, char **argv)
         if(rank % 2 == 1) dest = rank + 1;
 
         MPI_Sendrecv_replace(buffer_a, buffer_size, MPI_DOUBLE, dest, tag, dest, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        printf("rank %d got buffer_a of size %d from rank %d\n",rank,buffer_size,dest);
+        //printf("rank %d got buffer_a of size %d from rank %d\n",rank,buffer_size,dest);
       }
-      usleep(200000);
       MPI_Barrier(MPI_COMM_WORLD);
 
 
-      free(buffer_a); // 
-      free(buffer_b);
+      /* Write received data back to grid.*/
+      for(int nv = 0; nv < IP; nv++)
+      {
+        #define IHv(i, j, v) ((i) + (H.nxt * (H.nyt * (v)+ (j))))
+        #define IHbuff(i, j, v) ((i) + (2 * (H.ny * (v)+ (j))))
 
+        for(int j = H.jmin + ExtraLayer; j < H.jmax - ExtraLayer; j++)
+          {
+            if(rank > 0) // Don't write left boundary on rank 0
+            {
+              for(int i = H.imin; i < H.imin + ExtraLayer; i++)
+              {
+                double tmp = Hv.uold[IHbuff(i,j,nv)];
+
+                if(rank % 2 == 0) 
+                  Hv.uold[IHv(i,j,nv)] = buffer_a[IHbuff(i,j,nv)];
+                else
+                  Hv.uold[IHv(i,j,nv)] = buffer_b[IHbuff(i,j,nv)];
+
+                  //if(tmp != Hv.uold[IHbuff(i,j,nv)]){ printf("%f - %f ",tmp, Hv.uold[IHbuff(i,j,nv)]);
+                  //                                    printf("\n\n");}
+              }
+            }
+
+            if(rank < world_size) // Don't write right boundary on rank world_size
+            {
+              for(int i = H.imax - ExtraLayer; i < H.imax; i++)
+              {
+                if(rank % 2 == 1) 
+                  Hv.uold[IHv(i,j,nv)] = buffer_a[IHbuff(i,j,nv)];
+                else
+                  Hv.uold[IHv(i,j,nv)] = buffer_b[IHbuff(i,j,nv)];
+              }
+            }
+
+          } // End for j
+          #undef IHbuff
+          #undef IHv
+      } // End for nv
+
+
+      free(buffer_a); // Free up workspace
+      free(buffer_b);
+      MPI_Barrier(MPI_COMM_WORLD);
       break; // Remove at some point
 
 
