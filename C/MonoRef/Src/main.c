@@ -120,8 +120,7 @@ main(int argc, char **argv)
       flops = 0;
 
       // Start exchange of boundary conditions
-      int dest;       // Destination rank for boundary exchange
-      int tag = 111;  // Random tag
+      int dest, tag; // Destination rank for boundary exchange
 
       int buffer_size = 2 * H.ny * H.nvar;
       double* buffer_a = (double*)malloc(sizeof(double) * buffer_size); // Buffer for boundary data on left
@@ -164,6 +163,7 @@ main(int argc, char **argv)
       // Send buffer_b between 0 & 1, 2 & 3, ...
       if(rank < world_size - world_size % 2)
       {
+        tag = rank - rank % 2;
         if(rank % 2 == 0) dest = rank + 1;
         if(rank % 2 == 1) dest = rank - 1;
         
@@ -175,6 +175,7 @@ main(int argc, char **argv)
       // Send buffer_a between 1 & 2, 3 & 4, ... 
       if(0 < rank && rank < world_size - 1 + world_size % 2)
       {
+        tag = rank - (rank+1) % 2;
         if(rank % 2 == 0) dest = rank - 1;
         if(rank % 2 == 1) dest = rank + 1;
 
@@ -220,7 +221,6 @@ main(int argc, char **argv)
             }
 
           } // End for j
-
           #undef IHv
       } // End for nv
       
