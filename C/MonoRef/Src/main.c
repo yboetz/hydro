@@ -5,6 +5,7 @@
   (C) Guillaume Colin de Verdiere : CEA/DAM -- for the C version
 */
 #include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
 #include <mpi.h>
 #include <unistd.h>
@@ -118,37 +119,73 @@ main(int argc, char **argv)
       outnum[0] = 0;
       flops = 0;
 
-      // Exchange boundary data here
-      int tmp = 1000 + 1000*H.nstep + rank;
-      int dest;
-      int tag = 111;
+      // Start exchange of boundary conditions
+      int dest;       // Destination rank for boundary exchange
+      int tag = 111;  // Random tag
 
-      // Sent between 0 & 1, 2 & 3, ...
+      int buffer_size = 2 * H.ny * H.nvar;
+      double* buffer_a = (double*)malloc(sizeof(double) * buffer_size); // Buffer for boundary data on left
+      double* buffer_b = (double*)malloc(sizeof(double) * buffer_size); // and right site
+
+      /* Initialize buffers with correct values. For even ranks 
+      buffer_a is left boundary and buffer_b right, for odd ranks
+      vice versa */
+      for(int nv = 0; nv < IP; nv++)
+      {
+        #define IHv(i, j, v) ((i) + (H.nxt * (H.nyt * (v)+ (j))))
+        #define IHbuff(i, j, v) ((i) + (2 * (H.ny * (v)+ (j))))
+
+        for(int j = H.jmin + ExtraLayer; j < H.jmax - ExtraLayer; j++)
+          {
+            for(int i = H.imin + ExtraLayer; i < H.imin + ExtraLayer + 2; i++)
+            {
+              if(rank % 2 == 0) 
+                buffer_a[IHbuff(i,j,nv)] = Hv.uold[IHv(i,j,nv)];
+              else
+                buffer_b[IHbuff(i,j,nv)] = Hv.uold[IHv(i,j,nv)];
+            }
+            for(int i = H.imax - ExtraLayer - 2; i < H.imax - ExtraLayer; i++)
+            {
+              if(rank % 2 == 1) 
+                buffer_a[IHbuff(i,j,nv)] = Hv.uold[IHv(i,j,nv)];
+              else
+                buffer_b[IHbuff(i,j,nv)] = Hv.uold[IHv(i,j,nv)];
+            }
+          } // End for j
+          #undef IHbuff
+          #undef IHv
+      } // End for nv
+
+      // Send buffer_b between 0 & 1, 2 & 3, ...
       if(rank < world_size - world_size % 2)
       {
         if(rank % 2 == 0) dest = rank + 1;
         if(rank % 2 == 1) dest = rank - 1;
 
-        MPI_Sendrecv_replace(&tmp, 1, MPI_INT, dest, tag, dest, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        printf("rank %d got value %d from rank %d\n",rank,tmp,dest);
+        MPI_Sendrecv_replace(buffer_b, buffer_size, MPI_DOUBLE, dest, tag, dest, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        printf("rank %d got buffer_b of size %d from rank %d\n",rank,buffer_size,dest);
       }
       usleep(200000);
       MPI_Barrier(MPI_COMM_WORLD);
 
-      // Sent between 1 & 2, 3 & 4, ... 
+      // Send buffer_a between 1 & 2, 3 & 4, ... 
       if(0 < rank && rank < world_size - 1 + world_size % 2)
       {
         if(rank % 2 == 0) dest = rank - 1;
         if(rank % 2 == 1) dest = rank + 1;
 
-        MPI_Sendrecv_replace(&tmp, 1, MPI_INT, dest, tag, dest, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        printf("rank %d got value %d from rank %d\n",rank,tmp,dest);
+        MPI_Sendrecv_replace(buffer_a, buffer_size, MPI_DOUBLE, dest, tag, dest, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        printf("rank %d got buffer_a of size %d from rank %d\n",rank,buffer_size,dest);
       }
       usleep(200000);
-      MPI_Barrier(MPI_COMM_WORLD);    
+      MPI_Barrier(MPI_COMM_WORLD);
+
+
+      free(buffer_a); // 
+      free(buffer_b);
 
       break; // Remove at some point
-      
+
 
       if ((H.nstep % 2) == 0) 
       {
