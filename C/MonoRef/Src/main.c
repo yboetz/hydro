@@ -136,15 +136,17 @@ main(int argc, char **argv)
         
         for(int j = H.jmin + ExtraLayer; j < H.jmax - ExtraLayer; j++)
           {
+            // Left boundary
             for(int i = H.imin + ExtraLayer; i < H.imin + 2*ExtraLayer; i++)
             {
-              #define IHbuff(i, j, v) ((i-ExtraLayer) + (2 * (H.ny * (v)+ (j-ExtraLayer))))
+              #define IHbuff(i, j, v) ((i-H.imin-ExtraLayer) + (2 * (H.ny * (v)+ (j-ExtraLayer))))
               if(rank % 2 == 0) 
                 buffer_a[IHbuff(i,j,nv)] = Hv.uold[IHv(i,j,nv)];
               else
                 buffer_b[IHbuff(i,j,nv)] = Hv.uold[IHv(i,j,nv)];
               #undef IHbuff
             }
+            // Right boundary
             for(int i = H.imax - 2*ExtraLayer; i < H.imax - ExtraLayer; i++)
             {
               #define IHbuff(i, j, v) ((i-H.imax+2*ExtraLayer) + (2 * (H.ny * (v)+ (j-ExtraLayer))))
@@ -191,9 +193,10 @@ main(int argc, char **argv)
           {
             if(rank > 0) // Don't write left boundary on rank 0
             {
+              // Left boundary
               for(int i = H.imin; i < H.imin + ExtraLayer; i++)
               {
-                #define IHbuff(i, j, v) ((i) + (2 * (H.ny * (v)+ (j-ExtraLayer))))
+                #define IHbuff(i, j, v) ((i-H.imin) + (2 * (H.ny * (v)+ (j-ExtraLayer))))
                 if(rank % 2 == 0) 
                   Hv.uold[IHv(i,j,nv)] = buffer_a[IHbuff(i,j,nv)];
                 else
@@ -202,8 +205,9 @@ main(int argc, char **argv)
               }
             }
 
-            if(rank < world_size) // Don't write right boundary on rank world_size
+            if(rank < world_size-1) // Don't write right boundary on rank world_size-1
             {
+              // Right boundary
               for(int i = H.imax - ExtraLayer; i < H.imax; i++)
               {
                 #define IHbuff(i, j, v) ((i-H.imax+ExtraLayer) + (2 * (H.ny * (v)+ (j-ExtraLayer))))
@@ -218,7 +222,7 @@ main(int argc, char **argv)
           } // End for j
           #undef IHv
       } // End for nv
-
+      
 
       free(buffer_a); // Free up workspace
       free(buffer_b);
