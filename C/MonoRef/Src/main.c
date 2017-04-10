@@ -24,6 +24,7 @@ hydrovarwork_t Hvw;             // nvar
 hydrowork_t Hw;
 unsigned long flops = 0;
 
+
 int
 main(int argc, char **argv)
 {
@@ -56,7 +57,7 @@ main(int argc, char **argv)
   hydro_init(&H, &Hv);
   PRINTUOLD(H, &Hv);
   
-  if(rank == 0) printf("Hydro starts - MPI version \n");
+  if(rank == 0) printf("Hydro starts - MPI-OpenMP version \n");
   
   // vtkfile(nvtk, H, &Hv);
   if (H.dtoutput > 0) 
@@ -68,8 +69,13 @@ main(int argc, char **argv)
 
   MPI_Barrier(MPI_COMM_WORLD);
   
+// Start omp parallel region
+#pragma omp parallel private(Hw, Hvw) // Each thread needs his own workspace
+{
   while ((H.t < H.tend) && (H.nstep < H.nstepmax)) 
     {	
+#pragma omp single
+{
       start_iter = cclock();
       outnum[0] = 0;
       flops = 0;
@@ -83,6 +89,7 @@ main(int argc, char **argv)
         // Get global minima of all dt and broadcast it
         MPI_Allreduce(&dt, &dt, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
       }
+} // End omp single
       
       if ((H.nstep % 2) == 0) 
       {
@@ -94,7 +101,9 @@ main(int argc, char **argv)
         hydro_godunov(2, dt, H, &Hv, &Hw, &Hvw);
         hydro_godunov(1, dt, H, &Hv, &Hw, &Hvw); 
       }
-      
+
+#pragma omp single
+{
       end_iter = cclock();
       H.nstep++;
       H.t += dt;
@@ -135,8 +144,10 @@ main(int argc, char **argv)
         }
       }
       if(rank == 0) fprintf(stdout, "--> step=%-4ld %12.5e, %10.5e %s\n", H.nstep, H.t, dt, outnum);
-
+} // End omp single
     } // End while loop
+} // End omp parallel
+
 
   hydro_finish(H, &Hv);
   end_time = cclock();

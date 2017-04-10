@@ -43,8 +43,7 @@ hydro_init(hydroparam_t * H, hydrovar_t * Hv)
     H->nxt = H->imax - H->imin; // column size in the array
     H->nyt = H->jmax - H->jmin; // row size in the array
 
-    printf("Rank %d - grid size: %ldx%ld\n", rank, H->nxt, H->nyt); // Print out gridsize. Remove at some point
-    MPI_Barrier(MPI_COMM_WORLD);
+    printf("Rank %d - Grid size: %ldx%ld\n", rank, H->nxt, H->nyt); // Print out gridsize.
 
     // maximum direction size
     H->nxyt = (H->nxt > H->nyt) ? H->nxt : H->nyt;
@@ -72,6 +71,7 @@ hydro_init(hydroparam_t * H, hydrovar_t * Hv)
      Hv->uold[IHvP(x, y, IP)] = one / H->dx / H->dx;*/
     // point explosion at corner (top,left)
     if(rank == 0) Hv->uold[IHvP(H->imin+ExtraLayer, H->jmin+ExtraLayer, IP)] = one / H->dx / H->dx * world_size;
+    MPI_Barrier(MPI_COMM_WORLD);
 }                               // hydro_init
 
 void
