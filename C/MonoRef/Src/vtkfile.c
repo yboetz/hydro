@@ -18,7 +18,7 @@ vtkfile(long step, const hydroparam_t H, hydrovar_t * Hv)
 {
     char name[160];
     FILE *fic;
-    long i, j, nv;
+    int i, j, nv;
 
     WHERE("vtkfile");
     sprintf(name, "outputvtk_%05ld.vts", step);

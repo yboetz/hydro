@@ -6,6 +6,7 @@
 */
 #include <stdio.h>
 #include <time.h>
+#include <omp.h>
 
 #include "parametres.h"
 #include "hydro_funcs.h"
@@ -24,7 +25,7 @@ unsigned long flops = 0;
 int
 main(int argc, char **argv)
 {
-  int nb_th=1;
+  //int nb_th=1;
   double dt = 0;
   long nvtk = 0;
   char outnum[80];

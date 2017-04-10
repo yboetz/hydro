@@ -42,7 +42,7 @@ hydro_godunov(long idim, double dt, const hydroparam_t H, hydrovar_t * Hv,
 {
 
     // Local variables
-    long i, j;
+    int i, j;
     double dtdx;
 
     double *dq;
