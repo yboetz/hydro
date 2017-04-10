@@ -3,6 +3,7 @@ F90/
 hydro_mono
 hydro_omp
 hydro_mpi
+hydro_mpiomp
 penmp
 bin/
 *.vts
