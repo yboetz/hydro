@@ -64,8 +64,8 @@ mpi_sync(const hydroparam_t H, hydrovar_t * Hv)
     if(rank < world_size - world_size % 2)
     {
         tag = rank - rank % 2;
-        if(rank % 2 == 0) dest = rank + 1;
-        if(rank % 2 == 1) dest = rank - 1;
+        if(rank % 2 == 0)   dest = rank + 1;
+        else                dest = rank - 1;
         MPI_Sendrecv_replace(buffer_b, buffer_size, MPI_DOUBLE, dest, tag, dest, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
     //MPI_Barrier(MPI_COMM_WORLD);
@@ -75,8 +75,8 @@ mpi_sync(const hydroparam_t H, hydrovar_t * Hv)
     if(0 < rank && rank < world_size - 1 + world_size % 2)
     {
         tag = rank - (rank+1) % 2;
-        if(rank % 2 == 0) dest = rank - 1;
-        if(rank % 2 == 1) dest = rank + 1;
+        if(rank % 2 == 0)   dest = rank - 1;
+        else                dest = rank + 1;
         MPI_Sendrecv_replace(buffer_a, buffer_size, MPI_DOUBLE, dest, tag, dest, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
     //MPI_Barrier(MPI_COMM_WORLD);

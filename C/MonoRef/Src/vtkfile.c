@@ -110,7 +110,7 @@ vtkfile(long step, const hydroparam_t H, hydrovar_t * Hv)
                 // Go over all processes and append one after the other
                 for(int k = 0; k < world_size; k++)
                 {
-                    int size, nxl, nyl;
+                    int nxl, nyl;
                     nxl = (H.nxg / world_size) + ExtraLayerTot;
                     nyl = H.nyt;
                     if(k < H.nxg % world_size) nxl += 1; // Depending on rank nx is 1 entry longer
