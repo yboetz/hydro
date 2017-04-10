@@ -50,7 +50,7 @@ courantOnXY(double *cournox_loc, double *cournoy_loc, const long Hnx, const long
             double *c, double *q)
 {
     long i;
-    double maxValC = zero;
+    //double maxValC = zero;
     double tmp1, tmp2;
 
 #define IHVW(i,v) ((i) + (v) * nxyt)

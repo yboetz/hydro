@@ -10,6 +10,8 @@
 void
 mpi_sync(const hydroparam_t H, hydrovar_t * Hv)
 {
+    int i, j, nv;
+
     // Get number of processes
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
@@ -29,14 +31,14 @@ mpi_sync(const hydroparam_t H, hydrovar_t * Hv)
     /* Initialize buffers with correct values. For even ranks 
     buffer_a is left boundary and buffer_b right, for odd ranks
     vice versa */
-    for(int nv = 0; nv < H.nvar; nv++)
+    for(nv = 0; nv < H.nvar; nv++)
     {
     #define IHv(i, j, v) ((i) + (H.nxt * (H.nyt * (v)+ (j))))
     
-    for(int j = H.jmin + ExtraLayer; j < H.jmax - ExtraLayer; j++)
+    for(j = H.jmin + ExtraLayer; j < H.jmax - ExtraLayer; j++)
         {
             // Left boundary
-            for(int i = H.imin + ExtraLayer; i < H.imin + 2*ExtraLayer; i++)
+            for(i = H.imin + ExtraLayer; i < H.imin + 2*ExtraLayer; i++)
             {
                 #define IHbuff(i, j, v) ((i-H.imin-ExtraLayer) + (2 * (H.ny * (v)+ (j-ExtraLayer))))
                 if(rank % 2 == 0) 
@@ -46,7 +48,7 @@ mpi_sync(const hydroparam_t H, hydrovar_t * Hv)
                 #undef IHbuff
             }
             // Right boundary
-            for(int i = H.imax - 2*ExtraLayer; i < H.imax - ExtraLayer; i++)
+            for(i = H.imax - 2*ExtraLayer; i < H.imax - ExtraLayer; i++)
             {
                 #define IHbuff(i, j, v) ((i-H.imax+2*ExtraLayer) + (2 * (H.ny * (v)+ (j-ExtraLayer))))
                 if(rank % 2 == 1) 
@@ -83,16 +85,16 @@ mpi_sync(const hydroparam_t H, hydrovar_t * Hv)
 
 
     /* Write received data back to grid.*/
-    for(int nv = 0; nv < H.nvar; nv++)
+    for(nv = 0; nv < H.nvar; nv++)
     {
         #define IHv(i, j, v) ((i) + (H.nxt * (H.nyt * (v)+ (j))))
 
-        for(int j = H.jmin + ExtraLayer; j < H.jmax - ExtraLayer; j++)
+        for(j = H.jmin + ExtraLayer; j < H.jmax - ExtraLayer; j++)
             {
                 if(rank > 0) // Don't write left boundary on rank 0
                 {
                     // Left boundary
-                    for(int i = H.imin; i < H.imin + ExtraLayer; i++)
+                    for(i = H.imin; i < H.imin + ExtraLayer; i++)
                     {
                         #define IHbuff(i, j, v) ((i-H.imin) + (2 * (H.ny * (v)+ (j-ExtraLayer))))
                         if(rank % 2 == 0) 
@@ -106,7 +108,7 @@ mpi_sync(const hydroparam_t H, hydrovar_t * Hv)
                 if(rank < world_size-1) // Don't write right boundary on rank world_size-1
                 {
                     // Right boundary
-                    for(int i = H.imax - ExtraLayer; i < H.imax; i++)
+                    for(i = H.imax - ExtraLayer; i < H.imax; i++)
                     {
                         #define IHbuff(i, j, v) ((i-H.imax+ExtraLayer) + (2 * (H.ny * (v)+ (j-ExtraLayer))))
                         if(rank % 2 == 1) 

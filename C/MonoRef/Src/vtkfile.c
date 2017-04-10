@@ -28,7 +28,7 @@ vtkfile(long step, const hydroparam_t H, hydrovar_t * Hv)
     {
         char name[160];
         FILE *fic;
-        long i, j, nv;
+        int i, j, k, nv;
 
         WHERE("vtkfile");
         sprintf(name, "outputvtk_%05ld.vts", step);
@@ -69,13 +69,13 @@ vtkfile(long step, const hydroparam_t H, hydrovar_t * Hv)
         int usize = (H.nxt)*(H.nyt)*(H.nvar);
         double* buffer = (double*)malloc(sizeof(double) * world_size*usize);
         // Write data from rank 0 to buffer
-        for(int k = 0; k < usize; k++)
+        for(k = 0; k < usize; k++)
         {
             buffer[k] = Hv->uold[k];
         }
 
         // Rank 0 collects data from every process and writes it to temporary buffer
-        for(int k = 1; k < world_size; k++)
+        for(k = 1; k < world_size; k++)
         {
             int size, nxl, nyl;
             nxl = (H.nxg / world_size) + ExtraLayerTot;
@@ -108,7 +108,7 @@ vtkfile(long step, const hydroparam_t H, hydrovar_t * Hv)
             for(j = H.jmin + ExtraLayer; j < H.jmax - ExtraLayer; j++)
             {
                 // Go over all processes and append one after the other
-                for(int k = 0; k < world_size; k++)
+                for(k = 0; k < world_size; k++)
                 {
                     int nxl, nyl;
                     nxl = (H.nxg / world_size) + ExtraLayerTot;

@@ -24,7 +24,7 @@ hydro_init(hydroparam_t * H, hydrovar_t * Hv)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     
     long i, j;
-    long x, y;
+    //long x, y;
 
     // *WARNING* : we will use 0 based arrays everywhere since it is C code!
     H->imin = H->jmin = 0;

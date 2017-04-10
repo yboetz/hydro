@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <mpi.h>
+#include <omp.h>
 #include <unistd.h>
 
 #include "parametres.h"
@@ -40,7 +41,7 @@ main(int argc, char **argv)
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
 
-  int nb_th=1;
+  //int nb_th=1;
   double dt = 0;
   long nvtk = 0;
   char outnum[80];
