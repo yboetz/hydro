@@ -41,7 +41,9 @@ main(int argc, char **argv)
   hydro_init(&H, &Hv);
   PRINTUOLD(H, &Hv);
   
-  printf("Hydro starts - openmp version \n");
+  int nthreads = omp_get_max_threads();
+  printf("Hydro starts - OpenMP version.\n");
+  printf("Working with %d threads.\n\n",nthreads);
 
   // vtkfile(nvtk, H, &Hv);
   if (H.dtoutput > 0) 
