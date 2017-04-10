@@ -57,7 +57,18 @@ main(int argc, char **argv)
   hydro_init(&H, &Hv);
   PRINTUOLD(H, &Hv);
   
-  if(rank == 0) printf("Hydro starts - MPI-OpenMP version \n");
+  if(rank == 0)
+  {
+    #if defined(_OPENMP)
+      // Get number of threads per process
+      int nthreads = omp_get_max_threads();
+      printf("Hydro starts - MPI-OpenMP version.\n");
+      printf("Working on %d nodes, with %d threads each.\n\n",world_size,nthreads);
+    #else
+      printf("Hydro starts - MPI version.\n");
+      printf("Working on %d nodes.\n\n",world_size);
+    #endif
+  }
   
   // vtkfile(nvtk, H, &Hv);
   if (H.dtoutput > 0) 
@@ -66,7 +77,7 @@ main(int argc, char **argv)
       time_output = 1;
       next_output_time = next_output_time + H.dtoutput;
     }
-
+  usleep(50000);
   MPI_Barrier(MPI_COMM_WORLD);
   
 // Start omp parallel region

@@ -43,7 +43,7 @@ hydro_init(hydroparam_t * H, hydrovar_t * Hv)
     H->nxt = H->imax - H->imin; // column size in the array
     H->nyt = H->jmax - H->jmin; // row size in the array
 
-    printf("Rank %d - Grid size: %ldx%ld\n", rank, H->nxt, H->nyt); // Print out gridsize.
+    //printf("Rank %d - Grid size: %ldx%ld\n", rank, H->nxt, H->nyt); // Print out gridsize.
 
     // maximum direction size
     H->nxyt = (H->nxt > H->nyt) ? H->nxt : H->nyt;

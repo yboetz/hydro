@@ -196,8 +196,9 @@ process_input(char *datafile, hydroparam_t * H)
         printf("|nstepmax=%-7ld   |\n", H->nstepmax);
         printf("|noutput=%-7ld    |\n", H->noutput);
         printf("|dtoutput=%-10.3f|\n", H->dtoutput);
-        printf("+-------------------+\n");
+        printf("+-------------------+\n\n");
     }
+    usleep(50000);
     MPI_Barrier(MPI_COMM_WORLD);
 
     //exit(0);
