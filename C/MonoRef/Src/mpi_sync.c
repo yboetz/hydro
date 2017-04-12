@@ -24,8 +24,9 @@ mpi_sync(const hydroparam_t H, hydrovar_t * Hv)
     // Start exchange of boundary conditions
     int dest, tag; // Destination rank for boundary exchange
 
+    // Buffer for boundary data
     int buffer_size = 2 * H.ny * H.nvar;
-    double* buffer_a = (double*)malloc(sizeof(double) * buffer_size); // Buffer for boundary data
+    double* buffer_a = (double*)malloc(sizeof(double) * buffer_size);
     double* buffer_b = (double*)malloc(sizeof(double) * buffer_size);
 
     /* Initialize buffers with correct values. For even ranks 
@@ -111,8 +112,8 @@ mpi_sync(const hydroparam_t H, hydrovar_t * Hv)
         #undef IHv
     } // End for nv
 
-
-    free(buffer_a); // Free up workspace
+    // Free up workspace
+    free(buffer_a);
     free(buffer_b);
     MPI_Barrier(MPI_COMM_WORLD);
 }
