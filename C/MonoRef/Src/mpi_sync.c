@@ -10,7 +10,7 @@
 void
 mpi_sync(const hydroparam_t H, hydrovar_t * Hv)
 {
-    int i, j, nv;
+    int j, nv;
 
     // Get number of processes
     int world_size;
@@ -24,8 +24,9 @@ mpi_sync(const hydroparam_t H, hydrovar_t * Hv)
     // Start exchange of boundary conditions
     int dest, tag; // Destination rank for boundary exchange
 
+    // Buffer for boundary data
     int buffer_size = 2 * H.ny * H.nvar;
-    double* buffer_a = (double*)malloc(sizeof(double) * buffer_size); // Buffer for boundary data
+    double* buffer_a = (double*)malloc(sizeof(double) * buffer_size);
     double* buffer_b = (double*)malloc(sizeof(double) * buffer_size);
 
     /* Initialize buffers with correct values. For even ranks 
@@ -33,31 +34,29 @@ mpi_sync(const hydroparam_t H, hydrovar_t * Hv)
     vice versa */
     for(nv = 0; nv < H.nvar; nv++)
     {
-    #define IHv(i, j, v) ((i) + (H.nxt * (H.nyt * (v)+ (j))))
-    
-    for(j = H.jmin + ExtraLayer; j < H.jmax - ExtraLayer; j++)
-        {
-            // Left boundary
-            for(i = H.imin + ExtraLayer; i < H.imin + 2*ExtraLayer; i++)
+        #define IHv(i, j, v) ((i) + (H.nxt * (H.nyt * (v)+ (j))))
+        #define IHbuff(i, j, v) ((i) + (2 * (H.ny * (v)+ (j-ExtraLayer))))
+        for(j = H.jmin + ExtraLayer; j < H.jmax - ExtraLayer; j++)
             {
-                #define IHbuff(i, j, v) ((i-H.imin-ExtraLayer) + (2 * (H.ny * (v)+ (j-ExtraLayer))))
-                if(rank % 2 == 0) 
-                    buffer_a[IHbuff(i,j,nv)] = Hv->uold[IHv(i,j,nv)];
+                if(rank % 2 == 0)
+                {   // Left boundary
+                    buffer_a[IHbuff(0,j,nv)] = Hv->uold[IHv(2,j,nv)];
+                    buffer_a[IHbuff(1,j,nv)] = Hv->uold[IHv(3,j,nv)];
+                    // Right boundary
+                    buffer_b[IHbuff(0,j,nv)] = Hv->uold[IHv(H.imax-4,j,nv)];
+                    buffer_b[IHbuff(1,j,nv)] = Hv->uold[IHv(H.imax-3,j,nv)];
+                }
                 else
-                    buffer_b[IHbuff(i,j,nv)] = Hv->uold[IHv(i,j,nv)];
-                #undef IHbuff
-            }
-            // Right boundary
-            for(i = H.imax - 2*ExtraLayer; i < H.imax - ExtraLayer; i++)
-            {
-                #define IHbuff(i, j, v) ((i-H.imax+2*ExtraLayer) + (2 * (H.ny * (v)+ (j-ExtraLayer))))
-                if(rank % 2 == 1) 
-                    buffer_a[IHbuff(i,j,nv)] = Hv->uold[IHv(i,j,nv)];
-                else
-                    buffer_b[IHbuff(i,j,nv)] = Hv->uold[IHv(i,j,nv)];
-                #undef IHbuff
-            }
-        } // End for j
+                {
+                    // Left boundary
+                    buffer_b[IHbuff(0,j,nv)] = Hv->uold[IHv(2,j,nv)];
+                    buffer_b[IHbuff(1,j,nv)] = Hv->uold[IHv(3,j,nv)];
+                    // Right boundary
+                    buffer_a[IHbuff(0,j,nv)] = Hv->uold[IHv(H.imax-4,j,nv)];
+                    buffer_a[IHbuff(1,j,nv)] = Hv->uold[IHv(H.imax-3,j,nv)];
+                }
+            } // End for j
+        #undef IHbuff
         #undef IHv
     } // End for nv
 
@@ -71,7 +70,6 @@ mpi_sync(const hydroparam_t H, hydrovar_t * Hv)
         MPI_Sendrecv_replace(buffer_b, buffer_size, MPI_DOUBLE, dest, tag, dest, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
     //MPI_Barrier(MPI_COMM_WORLD);
-
 
     // Send buffer_a between 1 & 2, 3 & 4, ... 
     if(0 < rank && rank < world_size - 1 + world_size % 2)
@@ -88,43 +86,34 @@ mpi_sync(const hydroparam_t H, hydrovar_t * Hv)
     for(nv = 0; nv < H.nvar; nv++)
     {
         #define IHv(i, j, v) ((i) + (H.nxt * (H.nyt * (v)+ (j))))
-
+        #define IHbuff(i, j, v) ((i) + (2 * (H.ny * (v)+ (j-ExtraLayer))))
         for(j = H.jmin + ExtraLayer; j < H.jmax - ExtraLayer; j++)
             {
-                if(rank > 0) // Don't write left boundary on rank 0
-                {
+                if(rank % 2 == 0)
+                    {
                     // Left boundary
-                    for(i = H.imin; i < H.imin + ExtraLayer; i++)
-                    {
-                        #define IHbuff(i, j, v) ((i-H.imin) + (2 * (H.ny * (v)+ (j-ExtraLayer))))
-                        if(rank % 2 == 0) 
-                            Hv->uold[IHv(i,j,nv)] = buffer_a[IHbuff(i,j,nv)];
-                        else
-                            Hv->uold[IHv(i,j,nv)] = buffer_b[IHbuff(i,j,nv)];
-                        #undef IHbuff
-                    }
-                }
-
-                if(rank < world_size-1) // Don't write right boundary on rank world_size-1
-                {
+                    Hv->uold[IHv(0,j,nv)] = buffer_a[IHbuff(0,j,nv)];
+                    Hv->uold[IHv(1,j,nv)] = buffer_a[IHbuff(1,j,nv)];
                     // Right boundary
-                    for(i = H.imax - ExtraLayer; i < H.imax; i++)
-                    {
-                        #define IHbuff(i, j, v) ((i-H.imax+ExtraLayer) + (2 * (H.ny * (v)+ (j-ExtraLayer))))
-                        if(rank % 2 == 1) 
-                            Hv->uold[IHv(i,j,nv)] = buffer_a[IHbuff(i,j,nv)];
-                        else
-                            Hv->uold[IHv(i,j,nv)] = buffer_b[IHbuff(i,j,nv)];
-                        #undef IHbuff
+                    Hv->uold[IHv(H.imax-2,j,nv)] = buffer_b[IHbuff(0,j,nv)];
+                    Hv->uold[IHv(H.imax-1,j,nv)] = buffer_b[IHbuff(1,j,nv)];
                     }
-                }
-
+                else
+                    {
+                    // Left boundary
+                    Hv->uold[IHv(0,j,nv)] = buffer_b[IHbuff(0,j,nv)];
+                    Hv->uold[IHv(1,j,nv)] = buffer_b[IHbuff(1,j,nv)];
+                    // Right boundary
+                    Hv->uold[IHv(H.imax-2,j,nv)] = buffer_a[IHbuff(0,j,nv)];
+                    Hv->uold[IHv(H.imax-1,j,nv)] = buffer_a[IHbuff(1,j,nv)];
+                    }
             } // End for j
+        #undef IHbuff
         #undef IHv
     } // End for nv
 
-
-    free(buffer_a); // Free up workspace
+    // Free up workspace
+    free(buffer_a);
     free(buffer_b);
     MPI_Barrier(MPI_COMM_WORLD);
 }

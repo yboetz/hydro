@@ -60,7 +60,7 @@ main(int argc, char **argv)
   if(rank == 0)
   {
       printf("Hydro starts - MPI version.\n");
-      printf("Working on %d nodes.\n\n",world_size);
+      printf("Working on %d CPUs.\n\n",world_size);
   }
   
   // vtkfile(nvtk, H, &Hv);
@@ -72,8 +72,8 @@ main(int argc, char **argv)
     }
   usleep(50000);
   MPI_Barrier(MPI_COMM_WORLD);
-  
-// Start omp parallel region
+
+
   while ((H.t < H.tend) && (H.nstep < H.nstepmax)) 
     {	
       start_iter = cclock();
@@ -89,7 +89,7 @@ main(int argc, char **argv)
         // Get global minima of all dt and broadcast it
         MPI_Allreduce(&dt, &dt, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
       }
-      
+
       if ((H.nstep % 2) == 0) 
       {
         hydro_godunov(1, dt, H, &Hv, &Hw, &Hvw);

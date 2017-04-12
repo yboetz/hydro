@@ -8,3 +8,5 @@ penmp
 bin/
 *.vts
 .vscode/
+.ipynb_checkpoints/
+scaling.ipynb
