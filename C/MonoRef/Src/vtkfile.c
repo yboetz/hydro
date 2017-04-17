@@ -55,7 +55,7 @@ vtkfile(long step, const hydroparam_t H, hydrovar_t * Hv, int mask)
                 "<DataArray type=\"Float32\" format=\"ascii\" NumberOfComponents=\"3\">\n");
         for (j = 0; j < H.nyg + 1; j++) {
             for (i = 0; i < H.nxg + 1; i++) {
-                fprintf(fic, "%f %f %f\n", i * H.dx, j * H.dx, 0.0);
+                fprintf(fic, "%.2f %.2f %.2f\n", i * H.dx, j * H.dx, 0.0);
             }
         }
         fprintf(fic, "</DataArray>\n");
@@ -130,7 +130,7 @@ vtkfile(long step, const hydroparam_t H, hydrovar_t * Hv, int mask)
                     for(i = 0 + ExtraLayer; i < nxl - ExtraLayer; i++)
                     {
                         #define IHv_loc(i, j, v) ((i) + (nxl * (nyl * (v)+ (j))))
-                        fprintf(fic, "%lf ", *(buffer + k*usize + IHv_loc(i, j, nv)));
+                        fprintf(fic, "%.3e ", *(buffer + k*usize + IHv_loc(i, j, nv)));
                         #undef IHv_loc
                     }
                 }
