@@ -15,7 +15,7 @@
 #include "utils.h"
 #include "vtkfile.h"
 void
-vtkfile(long step, const hydroparam_t H, hydrovar_t * Hv)
+vtkfile(long step, const hydroparam_t H, hydrovar_t * Hv, int mask)
 {
     // Get number of processes
     int world_size;
@@ -23,6 +23,14 @@ vtkfile(long step, const hydroparam_t H, hydrovar_t * Hv)
     // Get rank of processes
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    // Get number of output variables
+    int ifID = (mask / 1) % 2;
+    int ifIU = (mask / 2) % 2;
+    int ifIV = (mask / 4) % 2;
+    int ifIP = (mask / 8) % 2;
+    int nvArr[4] = {ifID, ifIU, ifIV, ifIP};
+    //int num = ifID + ifIU + ifIV + ifIP;
     
     if(rank == 0)
     {
@@ -47,13 +55,15 @@ vtkfile(long step, const hydroparam_t H, hydrovar_t * Hv)
                 "<DataArray type=\"Float32\" format=\"ascii\" NumberOfComponents=\"3\">\n");
         for (j = 0; j < H.nyg + 1; j++) {
             for (i = 0; i < H.nxg + 1; i++) {
-                fprintf(fic, "%f %f %f\n", i * H.dx, j * H.dx, 0.0);
+                fprintf(fic, "%.2f %.2f %.2f\n", i * H.dx, j * H.dx, 0.0);
             }
         }
         fprintf(fic, "</DataArray>\n");
         fprintf(fic, "</Points>\n");
         name[0] = 0;
         for (nv = 0; nv < IP; nv++) {
+            if(nvArr[nv] == 0)
+                continue;
             if (nv == ID)
                 sprintf(name, "%s varID", name);
             if (nv == IU)
@@ -92,6 +102,8 @@ vtkfile(long step, const hydroparam_t H, hydrovar_t * Hv)
         fprintf(fic, "<CellData Scalars=\"%s\">\n", name);
         name[0] = 0;
         for (nv = 0; nv <= IP; nv++) {
+            if(nvArr[nv] == 0)
+                continue;
             if (nv == ID)
                 sprintf(name, "varID");
             if (nv == IU)
@@ -118,7 +130,7 @@ vtkfile(long step, const hydroparam_t H, hydrovar_t * Hv)
                     for(i = 0 + ExtraLayer; i < nxl - ExtraLayer; i++)
                     {
                         #define IHv_loc(i, j, v) ((i) + (nxl * (nyl * (v)+ (j))))
-                        fprintf(fic, "%lf ", *(buffer + k*usize + IHv_loc(i, j, nv)));
+                        fprintf(fic, "%.3e ", *(buffer + k*usize + IHv_loc(i, j, nv)));
                         #undef IHv_loc
                     }
                 }

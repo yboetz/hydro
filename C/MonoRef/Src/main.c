@@ -71,7 +71,7 @@ main(int argc, char **argv)
     #endif
   }
   
-  // vtkfile(nvtk, H, &Hv);
+  // vtkfile(nvtk, H, &Hv, 0b0001);
   if (H.dtoutput > 0) 
     {	
       // outputs are in physical time not in time steps
@@ -142,7 +142,7 @@ main(int argc, char **argv)
       {
         if ((H.nstep % H.noutput) == 0)
         {
-          vtkfile(++nvtk, H, &Hv);
+          vtkfile(++nvtk, H, &Hv, 0b0001);
           sprintf(outnum, "%s [%04ld]", outnum, nvtk);
         }
       }
@@ -150,7 +150,7 @@ main(int argc, char **argv)
       {
         if(H.t >= next_output_time)
         {
-          vtkfile(++nvtk, H, &Hv);
+          vtkfile(++nvtk, H, &Hv, 0b0001);
           next_output_time = next_output_time + H.dtoutput;
           sprintf(outnum, "%s [%04ld]", outnum, nvtk);
         }
