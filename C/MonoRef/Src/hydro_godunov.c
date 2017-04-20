@@ -67,13 +67,16 @@ hydro_godunov(long idim, double dt, const hydroparam_t H, hydrovar_t * Hv,
     // constant
     dtdx = dt / H.dx;
 
+#pragma omp single
+{
     // Update boundary conditions
     if (H.prt) {
       fprintf(stdout, "godunov %ld\n", idim);
       PRINTUOLD(H, Hv);
       }
     make_boundary(idim, H, Hv);
-    PRINTUOLD(H, Hv);
+    //PRINTUOLD(H, Hv);
+} // End omp single
     
     // Allocate work space for 1D sweeps
     allocate_work_space(H, Hw, Hvw);
@@ -159,10 +162,13 @@ hydro_godunov(long idim, double dt, const hydroparam_t H, hydrovar_t * Hv,
 			       H.imax, H.jmin, H.jmax, H.nvar, H.nxt, H.nyt, H.nxyt);
       }                       // end for j
 
+#pragma omp single
+{
       if (H.prt) {
 	printf("After pass %ld\n", idim);
 	PRINTUOLD(H, Hv);
       }
+} // End omp single
     } else {
 #pragma omp for schedule(dynamic,2)
       for (i = H.imin + ExtraLayer; i < H.imax - ExtraLayer; i++) {
@@ -207,10 +213,13 @@ hydro_godunov(long idim, double dt, const hydroparam_t H, hydrovar_t * Hv,
 	updateConservativeVars(idim, i, dtdx, uold, u, flux, H.imin,
 			       H.imax, H.jmin, H.jmax, H.nvar, H.nxt, H.nyt, H.nxyt);
       }                       // end for i
+#pragma omp single
+{
       if (H.prt) {
 	  printf("After pass %ld\n", idim);
 	  PRINTUOLD(H, Hv);
       }
+} // End omp single
     }
     // Deallocate work space
     deallocate_work_space(H, Hw, Hvw);
