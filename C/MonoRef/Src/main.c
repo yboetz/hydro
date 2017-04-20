@@ -81,28 +81,26 @@ main(int argc, char **argv)
   usleep(50000);
   MPI_Barrier(MPI_COMM_WORLD);
   
-// Start omp parallel region
-#pragma omp parallel private(Hw, Hvw) // Each thread needs his own workspace
-{
+
   while ((H.t < H.tend) && (H.nstep < H.nstepmax)) 
     {	
-#pragma omp single
-{
       start_iter = cclock();
       outnum[0] = 0;
       flops = 0;
 
       mpi_sync(H, &Hv); // Sync boundaries of processes
 
+
       if ((H.nstep % 2) == 0) 
       {
-        compute_deltat(&dt, H, &Hw, &Hv, &Hvw);
+        compute_deltat(&dt, H, &Hv); // Computed in parallel
         if (H.nstep == 0) dt = dt / 2.0;
         // Get global minima of all dt and broadcast it
         MPI_Allreduce(&dt, &dt, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
       }
-} // End omp single
-      
+// Start omp parallel region
+#pragma omp parallel private(Hw, Hvw) // Each thread needs his own workspace
+{
       if ((H.nstep % 2) == 0) 
       {
         hydro_godunov(1, dt, H, &Hv, &Hw, &Hvw);
@@ -113,9 +111,8 @@ main(int argc, char **argv)
         hydro_godunov(2, dt, H, &Hv, &Hw, &Hvw);
         hydro_godunov(1, dt, H, &Hv, &Hw, &Hvw); 
       }
+} // End omp parallel
 
-#pragma omp single
-{
       end_iter = cclock();
       H.nstep++;
       H.t += dt;
@@ -156,9 +153,7 @@ main(int argc, char **argv)
         }
       }
       if(rank == 0) fprintf(stdout, "--> step=%-4ld %12.5e, %10.5e %s\n", H.nstep, H.t, dt, outnum);
-} // End omp single
     } // End while loop
-} // End omp parallel
 
 
   hydro_finish(H, &Hv);

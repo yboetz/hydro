@@ -66,8 +66,7 @@ courantOnXY(double *cournox_loc, double *cournoy_loc, const long Hnx, const long
 }
 
 void
-compute_deltat(double *dt, const hydroparam_t H, hydrowork_t * Hw,
-               hydrovar_t * Hv, hydrovarwork_t * Hvw)
+compute_deltat(double *dt, const hydroparam_t H, hydrovar_t * Hv)
 {
   double cournox, cournoy;
 
@@ -80,20 +79,24 @@ compute_deltat(double *dt, const hydroparam_t H, hydrowork_t * Hw,
     cournox = zero;
     cournoy = zero;
 
-    Hvw->q = (double *) calloc(H.nvar * H.nxyt, sizeof(double));
-    Hw->e = (double *) malloc(H.nx * sizeof(double));
-    Hw->c = (double *) malloc(H.nx * sizeof(double));
+#pragma omp parallel reduction(max: cournox, cournoy)
+{
+    double* q = (double *) calloc(H.nvar * H.nxyt, sizeof(double));
+    double* e = (double *) malloc(H.nx * sizeof(double));
+    double* c = (double *) malloc(H.nx * sizeof(double));
 
+#pragma omp for schedule(dynamic,2)
     for (j = H.jmin + ExtraLayer; j < H.jmax - ExtraLayer; j++) {
-      ComputeQEforRow(j, Hv->uold, Hvw->q, Hw->e, H.smallr, H.nx, H.nxt, H.nyt, H.nxyt);
-      equation_of_state(&Hvw->q[IHvw(0, ID)], Hw->e,
-			&Hvw->q[IHvw(0, IP)], Hw->c, 0, H.nx, H.smallc, H.gamma);
-      courantOnXY(&cournox, &cournoy, H.nx, H.nxyt, Hw->c, Hvw->q);
+      ComputeQEforRow(j, Hv->uold, q, e, H.smallr, H.nx, H.nxt, H.nyt, H.nxyt);
+      equation_of_state(&q[IHvw(0, ID)], e,
+			&q[IHvw(0, IP)], c, 0, H.nx, H.smallc, H.gamma);
+      courantOnXY(&cournox, &cournoy, H.nx, H.nxyt, c, q);
     }
 
-    Free(Hvw->q);
-    Free(Hw->e);
-    Free(Hw->c);
+    Free(q);
+    Free(e);
+    Free(c);
+} // End omp parallel
 
     *dt = H.courant_factor * H.dx / MAX(cournox, MAX(cournoy, H.smallc));
 
