@@ -70,7 +70,7 @@ hydro_init(hydroparam_t * H, hydrovar_t * Hv)
      printf("PFL %d %d\n", x, y);
      Hv->uold[IHvP(x, y, IP)] = one / H->dx / H->dx;*/
     // point explosion at corner (top,left)
-    if(rank == 0) Hv->uold[IHvP(H->imin+ExtraLayer, H->jmin+ExtraLayer, IP)] = one / H->dx / H->dx * world_size;
+    if(rank == 0) Hv->uold[IHvP(H->imin+ExtraLayer, H->jmin+ExtraLayer, IP)] = one / H->dx / H->dx;
     MPI_Barrier(MPI_COMM_WORLD);
 }                               // hydro_init
 
