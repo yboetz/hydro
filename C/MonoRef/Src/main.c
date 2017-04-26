@@ -87,10 +87,12 @@ main(int argc, char **argv)
       start_iter = cclock();
       outnum[0] = 0;
       flops = 0;
-
+      
+      double start_mpi = cclock();
       mpi_sync(H, &Hv); // Sync boundaries of processes
+      double end_mpi = cclock();
 
-
+      double start_dt = cclock();
       if ((H.nstep % 2) == 0) 
       {
         compute_deltat(&dt, H, &Hv); // Computed in parallel
@@ -98,6 +100,9 @@ main(int argc, char **argv)
         // Get global minima of all dt and broadcast it
         MPI_Allreduce(&dt, &dt, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
       }
+      double end_dt = cclock();
+
+      double start_god = cclock();
 // Start omp parallel region
 #pragma omp parallel private(Hw, Hvw) // Each thread needs his own workspace
 {
@@ -112,8 +117,16 @@ main(int argc, char **argv)
         hydro_godunov(1, dt, H, &Hv, &Hw, &Hvw); 
       }
 } // End omp parallel
-
+      double end_god = cclock();
       end_iter = cclock();
+      double Tmpi = end_mpi - start_mpi;
+      double Tdt = end_dt - start_dt;
+      double Tgod = end_god - start_god;
+      MPI_Allreduce(&Tmpi, &Tmpi, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+      MPI_Allreduce(&Tdt, &Tdt, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+      MPI_Allreduce(&Tgod, &Tgod, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+      if(rank == 0) printf("mpi = %.6fs, dt = %.6fs, god = %.6fs - ",Tmpi,Tdt,Tgod);
+
       H.nstep++;
       H.t += dt;
 

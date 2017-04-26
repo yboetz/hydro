@@ -85,7 +85,7 @@ compute_deltat(double *dt, const hydroparam_t H, hydrovar_t * Hv)
     double* e = (double *) malloc(H.nx * sizeof(double));
     double* c = (double *) malloc(H.nx * sizeof(double));
 
-#pragma omp for schedule(dynamic,2)
+#pragma omp for schedule(static,2)
     for (j = H.jmin + ExtraLayer; j < H.jmax - ExtraLayer; j++) {
       ComputeQEforRow(j, Hv->uold, q, e, H.smallr, H.nx, H.nxt, H.nyt, H.nxyt);
       equation_of_state(&q[IHvw(0, ID)], e,
