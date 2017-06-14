@@ -51,6 +51,10 @@ main(int argc, char **argv)
   double next_output_time = 0;
   double start_time = 0, end_time = 0;
   double start_iter = 0, end_iter = 0;
+  double start_dt = 0, end_dt = 0;
+  double start_sync = 0, end_sync = 0;
+  double start_god = 0, end_god = 0;
+  double elaps_dt = 0, elaps_sync = 0, elaps_god = 0, elaps_iter = 0;
   double elaps = 0;
 
   start_time = cclock();
@@ -72,13 +76,13 @@ main(int argc, char **argv)
   }
   
   // vtkfile(nvtk, H, &Hv, 0b0001);
-  if (H.dtoutput > 0) 
+  if (H.dtoutput > 0)
     {	
       // outputs are in physical time not in time steps
       time_output = 1;
       next_output_time = next_output_time + H.dtoutput;
     }
-  usleep(50000);
+  //usleep(50000); // This time has to be added to start_time
   MPI_Barrier(MPI_COMM_WORLD);
   
 
@@ -88,9 +92,11 @@ main(int argc, char **argv)
       outnum[0] = 0;
       flops = 0;
 
+      start_sync = cclock();
       mpi_sync(H, &Hv); // Sync boundaries of processes
+      end_sync = cclock();
 
-
+      start_dt = cclock();
       if ((H.nstep % 2) == 0) 
       {
         compute_deltat(&dt, H, &Hv); // Computed in parallel
@@ -98,6 +104,9 @@ main(int argc, char **argv)
         // Get global minima of all dt and broadcast it
         MPI_Allreduce(&dt, &dt, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
       }
+      end_dt = cclock();
+
+      start_god = cclock();
 // Start omp parallel region
 #pragma omp parallel private(Hw, Hvw) // Each thread needs his own workspace
 {
@@ -112,10 +121,18 @@ main(int argc, char **argv)
         hydro_godunov(1, dt, H, &Hv, &Hw, &Hvw); 
       }
 } // End omp parallel
+      end_god = cclock();
 
       end_iter = cclock();
       H.nstep++;
       H.t += dt;
+
+      elaps_dt += (double)(end_dt - start_dt);
+      elaps_god += (double)(end_god - start_god);
+      elaps_sync += (double)(end_sync - start_sync);
+      MPI_Allreduce(&elaps_dt, &elaps_dt, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+      MPI_Allreduce(&elaps_god, &elaps_god, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+      MPI_Allreduce(&elaps_sync, &elaps_sync, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
       if(flops > 0)
       {
@@ -158,10 +175,16 @@ main(int argc, char **argv)
 
   hydro_finish(H, &Hv);
   end_time = cclock();
+  elaps_iter = elaps_dt + elaps_god + elaps_sync;
   elaps = (double) (end_time - start_time);
   timeToString(outnum, elaps); 
   
-  if(rank == 0) fprintf(stdout, "Hydro ends in %ss (%.3lf).\n", outnum, elaps);
+  if(rank == 0)
+  {
+    fprintf(stdout, "dt = %.3lfs (%.4lf%%); mpi = %.3lfs (%.4lf%%); god = %.3lfs (%.4lf%%); total = %.3lfs.\n",
+            elaps_dt, elaps_dt / elaps_iter*100, elaps_sync, elaps_sync / elaps_iter*100, elaps_god, elaps_god / elaps_iter*100, elaps_iter);
+    fprintf(stdout, "Hydro ends in %ss (%.3lf).\n", outnum, elaps);
+  }
 
   MPI_Finalize();
 
