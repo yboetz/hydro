@@ -34,7 +34,7 @@ then run it either by
 
 for the MPI or hybrid MPI/OpenMP version (4 cores, binds threads to cores), or by
 
-  ./hydro_omp -i input.nml
+    ./hydro_omp -i input.nml
 
 for the pure OpenMP version. The input files are located in the `Input` folder.
 
