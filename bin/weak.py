@@ -19,7 +19,7 @@ parser.add_argument('--omp', action="store_true", help = 'Use OMP')
 parser.add_argument('--hwthread', action="store_true", help = 'Use MPI hwthreads')
 options = parser.parse_args(sys.argv[1:])
 
-nx, ny = options.g if options.s else (300,100)
+nx, ny = options.g if options.g else (300,100)
 steps = options.s if options.s else 1000
 n = options.n if options.n else 1
 threads = 2 if options.omp else 1
