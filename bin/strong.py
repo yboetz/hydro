@@ -18,7 +18,7 @@ parser.add_argument('-n', nargs = '+', dest="n", help = 'Number of CPUs per sock
 parser.add_argument('--omp', action="store_true", help = 'Use OMP')
 options = parser.parse_args(sys.argv[1:])
 
-nx, ny = options.g if options.s else (300,100)
+nx, ny = options.g if options.g else (300,100)
 steps = options.s if options.s else 1000
 n = options.n if options.n else 1
 threads = 2 if options.omp else 1
@@ -70,13 +70,15 @@ for cpu in n:
         print(e)
     
     with open(outFile,'r') as file:
-        line = file.readlines()[-1]
+        lines = file.readlines()
+        line = lines[-1]
+        print(lines[-2],end='')
         begin, end = line.find('('), line.find(')')
         try:
             time.append(float(line[begin+1:end]))
         except Exception as e:
             print(e)
-        
+
 print(time)
 
 try:
