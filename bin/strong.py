@@ -16,12 +16,14 @@ parser.add_argument('-g', nargs = '+', dest="g", help = 'Gridsize', type = int)
 parser.add_argument('-s',  action='store', dest="s", help = 'Steps', type = int)
 parser.add_argument('-n', nargs = '+', dest="n", help = 'Number of CPUs per socket', type = int)
 parser.add_argument('--omp', action="store_true", help = 'Use OMP')
+parser.add_argument('--hwthread', action="store_true", help = 'Use MPI hwthreads')
 options = parser.parse_args(sys.argv[1:])
 
 nx, ny = options.g if options.g else (300,100)
 steps = options.s if options.s else 1000
 n = options.n if options.n else 1
 threads = 2 if options.omp else 1
+bind = 'hwthread' if options.hwthread else 'core'
 
 inputText = """This namelist contains various input parameters for HYDRO runs
 
@@ -59,11 +61,11 @@ for cpu in n:
     myenv = os.environ.copy()
     myenv["OMP_NUM_THREADS"] = str(threads)
 
-    keys = {'steps': steps, 'nx': nx, 'ny': ny, 'cpu': cpu, 'ifile': inFile, 'ofile': outFile}
+    keys = {'steps': steps, 'nx': nx, 'ny': ny, 'cpu': cpu, 'ifile': inFile, 'ofile': outFile, 'bind': bind}
     with open(inFile,'w') as file, open(outFile,'w') as _:
         file.write(inputText.format(**keys))
     
-    cmd = 'mpirun -np {cpu} --map-by core --bind-to core hydro_mpiomp -i {ifile} > {ofile}'.format(**keys)
+    cmd = 'mpirun -np {cpu} --map-by {bind} --bind-to {bind} hydro_mpiomp -i {ifile} > {ofile}'.format(**keys)
     try:
         sp.call(cmd, shell=True, env = myenv)
     except Exception as e:
